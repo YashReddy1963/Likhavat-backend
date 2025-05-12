@@ -25,3 +25,21 @@ class Tag(models.Model):
 
     def __str__(self):
         return self.name
+    
+# Bookmarking blogs model
+class Bookmark(models.Model):
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bookmarks')
+    blog = models.ForeignKey(Blogs, on_delete=models.CASCADE)
+    bookmarked_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('author', 'blog')
+
+# Like blogs model
+class Like(models.Model):
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='likes')
+    blog = models.ForeignKey(Blogs, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('author', 'blog')

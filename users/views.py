@@ -1,14 +1,14 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, generics
 from django.core.mail import send_mail
 from django.contrib.auth import authenticate, get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.parsers import MultiPartParser, FormParser
 from .models import OTP, User
-from blogs.models import Blogs
-from blogs.serializers import BlogCreateSerializer
+from blogs.models import Blogs, Bookmark, Like
+from blogs.serializers import BlogCreateSerializer, BookMarkSerializer, LikedBlogSerizlizer
 from .serializers import UserProfileSerializer
 import random
 
@@ -133,4 +133,44 @@ class UserBlogView(APIView):
         blogs = Blogs.objects.filter(author=user,is_published=True).order_by("-created_at")
         serializer = BlogCreateSerializer(blogs, many=True)
         return Response(serializer.data)
+    
+# Bookmarked blogs list view to list out saved blogs
+class BookmarkListCreateView(generics.ListCreateAPIView):
+    serializer_class = BookMarkSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Bookmark.objects.filter(author=self.request.user)
+    
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
+
+# Delete bookmarked blogs
+class BookmarkDeleteView(generics.DestroyAPIView):
+    serializer_class = BookMarkSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return Bookmark.objects.get(author=self.request.user, blog=self.kwargs['blog_id'])
+    
+# Liked blogs list view to list out liked blogs
+class LikeListCreateView(generics.ListCreateAPIView):
+    serializer_class = LikedBlogSerizlizer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Like.objects.filter(author=self.request.user)
+    
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
+
+# Unlike liked blogs
+class LikeDeleteView(generics.DestroyAPIView):
+    serializer_class = LikedBlogSerizlizer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return Like.objects.get(author=self.request.user, blog=self.kwargs['blog_id'])
+
+
     
