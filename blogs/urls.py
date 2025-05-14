@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import BlogImageUploadView, BlogCreateView, BlogListView, BlogDetailView, BlogListAuthorSugView, BlogTTSView, BlogRecommendationView, UserNotificationsView, MarkNotifcationsAsSeenView, UnseenNotificationCountView
+from .views import BlogImageUploadView, BlogCreateView, BlogListView, BlogDetailView, BlogListAuthorSugView, BlogTTSView, BlogRecommendationView, UserNotificationsView, MarkNotifcationsAsSeenView, UnseenNotificationCountView, WritingAssistantView
 
 urlpatterns = [
     path('all/', BlogListView.as_view(), name='blog-list'),
@@ -8,6 +8,7 @@ urlpatterns = [
     path('notifications/', UserNotificationsView.as_view(), name='user-notifications'),
     path('notifications/mark-seen/', MarkNotifcationsAsSeenView.as_view(), name='mark-notifications-seen'),
     path('notifications/unseen-count/', UnseenNotificationCountView.as_view(), name='unseen-notifications-count'),
+    path('assistant/', WritingAssistantView.as_view(), name='writing-assistant'),
     path('<int:blog_id>/tts/', BlogTTSView.as_view(), name='blog-tts'),    
     path('update/<int:pk>/', BlogCreateView.as_view(), name='blog-update'),
     path('<str:blog_id>/', BlogDetailView.as_view(), name='blog-detail'),

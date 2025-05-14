@@ -1,4 +1,7 @@
 from gtts import gTTS
+import language_tool_python
+from nltk.corpus import wordnet as wn
+from textblob import TextBlob
 from django.conf import settings
 from rest_framework import status
 from django.shortcuts import render
@@ -163,3 +166,38 @@ class UnseenNotificationCountView(APIView):
     def get(self, request):
         count = request.user.notifications.filter(seen=False).count()
         return Response({'count': count})
+    
+# writing assistant view
+class WritingAssistantView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        content = request.data.get('content', '')
+        tool = language_tool_python.LanguageTool('en-US')
+        matches = tool.check(content)
+        corrections = [match.__dict__ for match in matches]
+
+        blob = TextBlob(content)
+        sentiment = blob.sentiment
+        keywords = blob.noun_phrases
+
+        words = set(content.split())
+        synonyms ={}
+        for word in words:
+            syns = wn.synsets(word)
+            lemmas = set()
+            for syn in syns:
+                for lemma in syn.lemmas():
+                    lemmas.add(lemma.name())
+
+            if lemmas:
+                synonyms[word] = list(lemmas)[:3]
+        return Response({
+            'grammar': corrections,
+            'sentiment': {
+                'polarity': sentiment.polarity,
+                'subjectivity': sentiment.subjectivity
+            },
+            'keywords': keywords,
+            'synonyms': synonyms
+        })
