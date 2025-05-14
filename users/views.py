@@ -5,11 +5,13 @@ from django.core.mail import send_mail
 from django.contrib.auth import authenticate, get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework import permissions
 from rest_framework.parsers import MultiPartParser, FormParser
-from .models import OTP, User
+from .models import OTP, User, Comment, Follow
 from blogs.models import Blogs, Bookmark, Like
+from django.shortcuts import get_object_or_404
 from blogs.serializers import BlogCreateSerializer, BookMarkSerializer, LikedBlogSerizlizer
-from .serializers import UserProfileSerializer
+from .serializers import UserProfileSerializer, CommentSerializer, UserMiniSerializer
 import random
 
 # Create your views here.
@@ -172,5 +174,78 @@ class LikeDeleteView(generics.DestroyAPIView):
     def get_object(self):
         return Like.objects.get(author=self.request.user, blog=self.kwargs['blog_id'])
 
+# Comments creation and fetching comment content
+class CommentListCreateView(generics.ListCreateAPIView):
+    serializer_class = CommentSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    def get_queryset(self):
+        blog_id = self.kwargs['blog_id']
+        return Comment.objects.filter(blog_id=blog_id, parent=None).order_by('-created_at')
     
+    def perform_create(self, serializer):
+        blog_id = self.kwargs['blog_id']
+        serializer.save(user=self.request.user, blog_id=blog_id)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({
+            "request": self.request,
+            "view": self,
+        })
+        return context
+    
+# FollowToggle view to follow and unfollow the user
+class FollowToggleView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, user_id):
+        user_to_follow = get_object_or_404(User, id=user_id)
+        current_user = request.user
+
+        if user_to_follow == current_user:
+            return Response({'error': 'You cannot follow yourself'}, status=400)
+        
+        follow, created = Follow.objects.get_or_create(follower=current_user, following=user_to_follow)
+
+        if not created:
+            follow.delete()
+            return Response({'message': 'Unfollowed'}, status=200)
+        
+        return Response({'message': 'Followed'}, status=201)
+
+# View to get follower-following of current user
+class UserFollowerCount(APIView):
+    def get(self, request, user_id):
+        user = get_object_or_404(User, id=user_id)
+        followers = user.followers.count()
+        following = user.following.count()
+        
+        return Response({'followers': followers, 'following': following})
+    
+# View to check current user already follows the profile user or not
+class IsFollowingView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request, user_id):
+        target_user = get_object_or_404(User, id=user_id)
+        is_following = Follow.objects.filter(follower=request.user, following=target_user).exists()
+        
+        return Response({'is_following': is_following})
+    
+# View to get info of followers
+class FollowersListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, user_id):
+        followers = Follow.objects.filter(following_id=user_id).select_related('follower')
+        serializer = UserMiniSerializer([f.follower for f in followers], many=True)
+        return Response(serializer.data)
+    
+# View to get info of followings
+class FollowingListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, user_id):
+        following = Follow.objects.filter(follower_id=user_id).select_related('following')
+        serializer = UserMiniSerializer([f.following for f in following], many='True')
+        return Response(serializer.data)

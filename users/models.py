@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.utils import timezone
+from django.contrib.auth.models import User
 import uuid
 
 # Create your models here.
@@ -47,3 +48,23 @@ class OTP(models.Model):
     
     def __str__(self):
          return f"{self.name.email} - {self.otp}"
+    
+# Comment model
+class Comment(models.Model):
+    blog = models.ForeignKey("blogs.Blogs", on_delete=models.CASCADE, related_name="comments")
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    content = models.TextField()
+    parent = models.ForeignKey("self", null=True, blank=True, related_name="replies", on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+         return f"{self.user.name} - {self.content[:30]}"
+    
+# Followers model
+class Follow(models.Model):
+    follower = models.ForeignKey(User, on_delete=models.CASCADE, related_name='following')
+    following = models.ForeignKey(User, on_delete=models.CASCADE, related_name='followers')
+    followed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+         unique_together = ('follower','following')

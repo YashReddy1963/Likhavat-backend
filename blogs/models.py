@@ -43,3 +43,28 @@ class Like(models.Model):
 
     class Meta:
         unique_together = ('author', 'blog')
+
+# Blog View model to for storing the blogs visited by the user
+class BlogView(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    blog = models.ForeignKey(Blogs, on_delete=models.CASCADE)
+    viewed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'blog')
+
+# Notification model
+class Notification(models.Model):
+    NOTIFICATION_TYPE = (
+        ('RECOMMENDATION', 'Recommendation'),
+        ('NEW_BLOG', 'New Blog'),
+        ('NEW_FOLLOWER', 'New Follower'),
+    )
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notifications") 
+    initiator = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name="initiated_notifications")
+    blog = models.ForeignKey(Blogs, on_delete=models.CASCADE, null=True, blank=True)
+    type = models.CharField(choices=NOTIFICATION_TYPE, max_length=20)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    seen = models.BooleanField(default=False)
