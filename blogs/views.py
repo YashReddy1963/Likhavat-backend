@@ -79,11 +79,8 @@ class BlogDetailView(RetrieveAPIView):
     queryset = Blogs.objects.all()
     serializer_class = BlogCreateSerializer
     permission_classes = [AllowAny]
-
-    def get(self,reqest, blog_id):
-        blog = get_object_or_404(Blogs, id=blog_id)
-        serializer = BlogCreateSerializer(blog)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    lookup_field = 'id'
+    lookup_url_kwarg = 'blog_id'
     
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -133,7 +130,7 @@ class BlogRecommendationView(APIView):
     def get(self, request):
         user = request.user
         all_blogs = Blogs.objects.all()
-        liked_blogs = Blogs.objects.filter(like__author=user)
+        liked_blogs = Blogs.objects.filter(blog_likes__author=user)
         viewed_blogs = Blogs.objects.filter(blogview__user=user)
 
         recommend_ids = get_blog_recommendations(user, all_blogs, liked_blogs, viewed_blogs)

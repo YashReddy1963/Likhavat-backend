@@ -38,7 +38,7 @@ class Bookmark(models.Model):
 # Like blogs model
 class Like(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='likes')
-    blog = models.ForeignKey(Blogs, on_delete=models.CASCADE)
+    blog = models.ForeignKey(Blogs, on_delete=models.CASCADE, related_name='blog_likes')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -50,8 +50,6 @@ class BlogView(models.Model):
     blog = models.ForeignKey(Blogs, on_delete=models.CASCADE)
     viewed_at = models.DateTimeField(auto_now_add=True)
 
-    class Meta:
-        unique_together = ('user', 'blog')
 
 # Notification model
 class Notification(models.Model):
