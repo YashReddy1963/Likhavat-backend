@@ -79,17 +79,17 @@ class BlogDetailView(RetrieveAPIView):
     queryset = Blogs.objects.all()
     serializer_class = BlogCreateSerializer
     permission_classes = [AllowAny]
-    lookup_field = 'id'
-    lookup_url_kwarg = 'blog_id'
-    
+    lookup_field = 'id'  
+    lookup_url_kwarg = 'blog_id'  
     def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object()
+        blog = self.get_object()
 
         if request.user.is_authenticated:
-            BlogView.objects.get_or_create(user=request.user, blog=instance)
+            BlogView.objects.create(user=request.user, blog=blog)
 
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)
+        serializer = self.get_serializer(blog)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 # Image upload view for blog content
 class BlogImageUploadView(APIView):
